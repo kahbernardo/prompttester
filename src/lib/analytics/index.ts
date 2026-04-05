@@ -1,0 +1,10 @@
+export { buildAnalytics } from "@/lib/analytics/buildAnalytics";
+export { classifyResponse } from "@/lib/analytics/classifyResponse";
+export { computeConsistencyByModel } from "@/lib/analytics/consistency";
+export { computeCostPerQuality, computeCostPerToken, computeVerbosityScore, estimateTtft } from "@/lib/analytics/efficiency";
+export { rankModels } from "@/lib/analytics/rankModels";
+export { scoreResponse } from "@/lib/analytics/scoreResponse";
+export { buildPairSimilarities, computeSimilarity } from "@/lib/analytics/similarity";
+export { computeHistoricalTrends } from "@/lib/analytics/trends";
+export type { AnalyticsBundle, FallbackRecommendation, ModelAnalytics, ResponseClassification, SimilarityEdge, TrendPoint } from "@/lib/analytics/types";
+export type { RankingFocus } from "@/lib/analytics/rankModels";

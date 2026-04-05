@@ -1,3 +1,15 @@
+<img width="527" height="204" alt="Captura de Tela 2026-04-04 às 21 22 43" src="https://github.com/user-attachments/assets/cb1a7943-f298-474a-9f0e-8438ba3e339b" />
+
+<img width="735" height="308" alt="image" src="https://github.com/user-attachments/assets/8a12b53f-c9d4-4468-94d7-25fa2f72a660" />
+<img width="719" height="864" alt="image" src="https://github.com/user-attachments/assets/d6e530df-5fbb-452b-a9cb-97823d023fa7" />
+<img width="856" height="799" alt="image" src="https://github.com/user-attachments/assets/711e9801-35d9-4f73-869c-e92803414d4b" />
+<img width="879" height="723" alt="image" src="https://github.com/user-attachments/assets/b0e287bb-41fe-4fd5-8c2a-b9c3ea4f4057" />
+
+
+
+
+
+
 # Prompt Tester - LLM Comparator
 
 Uma plataforma para comparar modelos de IA lado a lado com foco em execucao real, analise tecnica e decisao orientada por dados.

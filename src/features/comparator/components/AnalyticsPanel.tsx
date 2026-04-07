@@ -3,7 +3,7 @@
 import { AnalyticsBundle, ModelAnalytics } from "@/lib/analytics";
 import { getMessage } from "@/shared/i18n/messages";
 import { useUiPreferencesStore } from "@/shared/store/uiPreferencesStore";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -17,7 +17,6 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
-  ResponsiveContainer,
   Scatter,
   ScatterChart,
   Tooltip,
@@ -28,6 +27,39 @@ import {
 type AnalyticsPanelProps = {
   analytics: AnalyticsBundle;
 };
+
+type StableChartProps = {
+  className: string;
+  children: (size: { width: number; height: number }) => React.ReactNode;
+};
+
+function StableChart({ className, children }: StableChartProps) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const update = () => {
+      const nextWidth = Math.max(0, Math.floor(element.clientWidth));
+      const nextHeight = Math.max(0, Math.floor(element.clientHeight));
+      setSize((current) => {
+        if (current.width === nextWidth && current.height === nextHeight) return current;
+        return { width: nextWidth, height: nextHeight };
+      });
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className={className}>
+      {size.width > 0 && size.height > 0 ? children(size) : null}
+    </div>
+  );
+}
 
 function metricTone(value: number, thresholds: [number, number], inverse = false): string {
   if (inverse) {
@@ -247,15 +279,15 @@ export function AnalyticsPanel({ analytics }: AnalyticsPanelProps) {
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="h-80 min-w-0 rounded-lg border border-zinc-800 px-3 pb-6 pt-3">
           <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">{getMessage(locale, "costVsLatency")}</p>
-          <div className="h-56 min-w-0">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
-            <ScatterChart margin={{ top: 10, right: 14, left: 0, bottom: 28 }}>
+          <StableChart className="h-56 min-w-0">
+            {({ width, height }) => (
+            <ScatterChart width={width} height={height} margin={{ top: 10, right: 14, left: 0, bottom: 28 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="latency" name={`${getMessage(locale, "latency")} (ms)`} />
               <YAxis dataKey="cost" name={`${costLabel} (${currency})`} />
               <Tooltip
                 cursor={{ strokeDasharray: "3 3" }}
-                formatter={(value: number) => [formatCurrencySmart(Number(value)), `${costLabel} (${currency})`]}
+                formatter={(value) => [formatCurrencySmart(Number(value ?? 0)), `${costLabel} (${currency})`]}
                 labelFormatter={(label) => `${getMessage(locale, "latency")}: ${label}ms`}
               />
               <Scatter data={costLatencyData} dataKey="cost" name={getMessage(locale, "legendCostLatencyPoints")}>
@@ -264,8 +296,8 @@ export function AnalyticsPanel({ analytics }: AnalyticsPanelProps) {
                 ))}
               </Scatter>
             </ScatterChart>
-            </ResponsiveContainer>
-          </div>
+            )}
+          </StableChart>
           <div className="mt-1 flex flex-wrap gap-2 text-xs">
             {costLatencyData.map((entry, index) => (
               <button
@@ -287,21 +319,21 @@ export function AnalyticsPanel({ analytics }: AnalyticsPanelProps) {
 
         <div className="h-80 min-w-0 rounded-lg border border-zinc-800 px-3 pb-6 pt-3">
           <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">{getMessage(locale, "costPerQuality")}</p>
-          <div className="h-56 min-w-0">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
-            <BarChart data={costPerQualityData} margin={{ top: 8, right: 12, left: 0, bottom: 34 }}>
+          <StableChart className="h-56 min-w-0">
+            {({ width, height }) => (
+            <BarChart width={width} height={height} data={costPerQualityData} margin={{ top: 8, right: 12, left: 0, bottom: 34 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="model" interval={0} angle={-18} height={70} textAnchor="end" tick={{ fontSize: 11 }} />
               <YAxis tickFormatter={(value) => formatCurrencySmart(Number(value))} />
-              <Tooltip formatter={(value: number) => [`${formatCurrencySmart(Number(value))} / ponto`, getMessage(locale, "costPerQuality")]} />
+              <Tooltip formatter={(value) => [`${formatCurrencySmart(Number(value ?? 0))} / ponto`, getMessage(locale, "costPerQuality")]} />
               <Bar dataKey="costPerQuality" name={getMessage(locale, "legendCostPerQualityBars")}>
                 {costPerQualityData.map((entry, index) => {
                   return <Cell key={`${entry.model}-${index}`} fill={getModelFill(entry.model, entry.color)} />;
                 })}
               </Bar>
             </BarChart>
-            </ResponsiveContainer>
-          </div>
+            )}
+          </StableChart>
           <div className="mt-1 flex flex-wrap gap-2 text-xs">
             {costPerQualityData.map((entry, index) => (
               <button
@@ -323,8 +355,9 @@ export function AnalyticsPanel({ analytics }: AnalyticsPanelProps) {
 
         <div className="h-80 min-w-0 rounded-lg border border-zinc-800 px-3 pb-6 pt-3">
           <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">{getMessage(locale, "latencyBreakdown")}</p>
-          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={220}>
-            <BarChart data={latencyData} margin={{ top: 8, right: 12, left: 0, bottom: 38 }}>
+          <StableChart className="h-full min-w-0">
+            {({ width, height }) => (
+            <BarChart width={width} height={height} data={latencyData} margin={{ top: 8, right: 12, left: 0, bottom: 38 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="model" interval={0} angle={-18} height={70} textAnchor="end" tick={{ fontSize: 11 }} />
               <YAxis />
@@ -333,13 +366,15 @@ export function AnalyticsPanel({ analytics }: AnalyticsPanelProps) {
               <Bar dataKey="ttft" fill="#0ea5e9" name="TTFT (ms)" />
               <Bar dataKey="latency" fill="#6366f1" name="Total (ms)" />
             </BarChart>
-          </ResponsiveContainer>
+            )}
+          </StableChart>
         </div>
 
         <div className="h-80 min-w-0 rounded-lg border border-zinc-800 px-3 pb-6 pt-3">
           <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">{getMessage(locale, "historicalTrends")}</p>
-          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={220}>
-            <LineChart data={trendData} margin={{ top: 8, right: 12, left: 0, bottom: 38 }}>
+          <StableChart className="h-full min-w-0">
+            {({ width, height }) => (
+            <LineChart width={width} height={height} data={trendData} margin={{ top: 8, right: 12, left: 0, bottom: 38 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="model" interval={0} angle={-18} height={70} textAnchor="end" tick={{ fontSize: 11 }} />
               <YAxis yAxisId="left" />
@@ -349,15 +384,17 @@ export function AnalyticsPanel({ analytics }: AnalyticsPanelProps) {
               <Line yAxisId="left" type="monotone" dataKey="avgLatencyMs" stroke="#f97316" name="Latencia media (ms)" />
               <Line yAxisId="right" type="monotone" dataKey="avgCostUsd" stroke="#22c55e" name="Custo medio (USD)" />
             </LineChart>
-          </ResponsiveContainer>
+            )}
+          </StableChart>
         </div>
       </div>
 
       {analytics.models.length >= 3 && (
         <div className="h-[22rem] min-w-0 rounded-lg border border-zinc-800 px-3 pb-6 pt-3">
           <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">{getMessage(locale, "profileRadar")}</p>
-          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={260}>
-            <RadarChart data={radarData} margin={{ top: 8, right: 12, left: 12, bottom: 24 }}>
+          <StableChart className="h-full min-w-0">
+            {({ width, height }) => (
+            <RadarChart width={width} height={height} data={radarData} margin={{ top: 8, right: 12, left: 12, bottom: 24 }}>
               <PolarGrid />
               <PolarAngleAxis dataKey="model" />
               <PolarRadiusAxis domain={[0, 10]} />
@@ -367,7 +404,8 @@ export function AnalyticsPanel({ analytics }: AnalyticsPanelProps) {
               <Legend verticalAlign="bottom" height={36} />
               <Tooltip />
             </RadarChart>
-          </ResponsiveContainer>
+            )}
+          </StableChart>
         </div>
       )}
 
